@@ -1,0 +1,28 @@
+{
+    "name": "delphi-first-message",
+    "version": "1.0.0",
+    "description": "Auto-fills and sends a first message to a Delphi AI embed",
+    "main": "dist/delphi-first-message.js",
+    "unpkg": "dist/delphi-first-message.js",
+    "jsdelivr": "dist/delphi-first-message.js",
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "esbuild src/index.ts --bundle --outfile=dist/delphi-first-message.js --format=iife --minify",
+        "dev": "esbuild src/index.ts --bundle --outfile=dist/delphi-first-message.js --format=iife --watch",
+        "prepublishOnly": "npm run build"
+    },
+    "keywords": [
+        "delphi",
+        "ai",
+        "embed",
+        "chat"
+    ],
+    "author": "",
+    "license": "MIT",
+    "devDependencies": {
+        "esbuild": "^0.20.2",
+        "typescript": "^5.4.5"
+    }
+}

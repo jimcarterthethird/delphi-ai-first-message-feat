@@ -1,0 +1,1017 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Delphi First Message — Demo</title>
+
+    <!--
+      ┌─────────────────────────────────────────────────────────┐
+      │        DELPHI FIRST MESSAGE — STANDALONE DEMO           │
+      ├─────────────────────────────────────────────────────────┤
+      │ Must be served over HTTP, not opened as file://         │
+      │                                                         │
+      │  npx http-server . -p 8080                              │
+      │  → http://localhost:8080/demo/?q=Hello&page=CHAT       │
+      └─────────────────────────────────────────────────────────┘
+
+      This page uses the Delphi loader script (embed.delphi.ai/loader.js)
+      to inject the embed — the same approach used by jim-carter-ai.
+      The loader creates an initially-accessible iframe document, which is
+      required for the first-message injection to work.
+    -->
+
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #f4f4f5;
+        color: #18181b;
+        min-height: 100vh;
+      }
+
+      /* ── File:// warning banner ───────────────────────────── */
+      #file-warning {
+        display: none;
+        background: #7f1d1d;
+        color: #fecaca;
+        padding: 0.75rem 1.25rem;
+        font-size: 0.85rem;
+        text-align: center;
+        line-height: 1.6;
+      }
+      #file-warning strong { color: #fff }
+      #file-warning code {
+        background: #450a0a;
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-family: monospace;
+      }
+
+      /* ── Header ──────────────────────────────────────────── */
+      header {
+        background: #18181b;
+        color: #fff;
+        padding: 0.85rem 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+      }
+      header h1 { font-size: 1rem; font-weight: 600 }
+      .badge {
+        font-size: 0.68rem;
+        background: #3f3f46;
+        border: 1px solid #52525b;
+        padding: 1px 7px;
+        border-radius: 999px;
+        color: #a1a1aa;
+      }
+
+      /* ── Layout ──────────────────────────────────────────── */
+      .layout {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        height: calc(100vh - 44px);
+      }
+
+      /* ── Left panel ──────────────────────────────────────── */
+      .panel {
+        background: #fff;
+        border-right: 1px solid #e4e4e7;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+      }
+      .section {
+        padding: 1rem 1.1rem;
+        border-bottom: 1px solid #f4f4f5;
+      }
+      .section:last-child { border-bottom: none; flex: 1 }
+      .section h2 {
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: #71717a;
+        margin-bottom: 0.7rem;
+      }
+
+      label {
+        display: block;
+        font-size: 0.78rem;
+        font-weight: 500;
+        color: #52525b;
+        margin-bottom: 0.25rem;
+      }
+      .hint { font-size: 0.7rem; color: #a1a1aa; font-weight: 400 }
+
+      input[type="text"], select {
+        width: 100%;
+        border: 1px solid #d4d4d8;
+        border-radius: 5px;
+        padding: 0.4rem 0.6rem;
+        font-size: 0.82rem;
+        margin-bottom: 0.6rem;
+        outline: none;
+        background: #fff;
+        transition: border-color 0.15s;
+      }
+      input[type="text"]:focus, select:focus { border-color: #7c3aed }
+      input[type="text"]::placeholder { color: #a1a1aa }
+
+      .row { display: flex; gap: 0.4rem; align-items: center; margin-bottom: 0.6rem }
+      .row input, .row select { margin-bottom: 0; flex: 1 }
+
+      .btn {
+        display: inline-flex; align-items: center; gap: 0.35rem;
+        border: none; border-radius: 5px; padding: 0.45rem 0.85rem;
+        font-size: 0.82rem; font-weight: 500; cursor: pointer;
+        transition: opacity 0.15s;
+      }
+      .btn:hover { opacity: 0.82 }
+      .btn-primary { background: #7c3aed; color: #fff; width: 100%; justify-content: center }
+      .btn-sm {
+        background: #f4f4f5; color: #52525b;
+        border: 1px solid #e4e4e7; font-size: 0.74rem;
+        padding: 0.3rem 0.6rem;
+      }
+
+      /* ── URL preview ─────────────────────────────────────── */
+      .url-box {
+        background: #fafafa; border: 1px solid #e4e4e7; border-radius: 5px;
+        padding: 0.5rem 0.65rem; font-family: monospace; font-size: 0.7rem;
+        color: #3f3f46; word-break: break-all; line-height: 1.55;
+        margin-bottom: 0.65rem;
+      }
+      .url-box .p { color: #7c3aed }
+      .url-box .v { color: #059669 }
+
+      /* ── Examples ────────────────────────────────────────── */
+      .examples { display: flex; flex-direction: column; gap: 0.4rem }
+      .ex-btn {
+        text-align: left; background: #fafafa; border: 1px solid #e4e4e7;
+        border-radius: 5px; padding: 0.5rem 0.65rem; font-size: 0.78rem;
+        cursor: pointer; transition: background 0.1s; color: #3f3f46;
+      }
+      .ex-btn:hover { background: #f0f0f1; border-color: #7c3aed; color: #7c3aed }
+      .ex-btn code { display: block; font-size: 0.67rem; color: #a1a1aa; margin-top: 2px }
+
+      /* ── Log ─────────────────────────────────────────────── */
+      .log {
+        background: #18181b; border-radius: 5px; padding: 0.6rem 0.7rem;
+        font-family: monospace; font-size: 0.7rem; color: #71717a;
+        height: 130px; overflow-y: auto; line-height: 1.65;
+      }
+      .log .i { color: #86efac }
+      .log .w { color: #fde68a }
+      .log .e { color: #fca5a5 }
+
+      /* ── Right area ──────────────────────────────────────── */
+      .embed-area { display: flex; flex-direction: column }
+      .toolbar {
+        background: #fff; border-bottom: 1px solid #e4e4e7;
+        padding: 0.5rem 0.85rem; display: flex; align-items: center; gap: 0.6rem;
+        font-size: 0.78rem;
+      }
+      .dot { width: 8px; height: 8px; border-radius: 50%; background: #d4d4d8; flex-shrink: 0 }
+      .dot.ok { background: #22c55e }
+      .dot.loading { background: #f59e0b; animation: pulse 1s infinite }
+      @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+      .toolbar-url {
+        flex: 1; font-family: monospace; font-size: 0.68rem; color: #a1a1aa;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+
+      /* The Delphi loader injects the iframe here */
+      #delphi-container {
+        flex: 1;
+        position: relative;
+      }
+
+      .placeholder {
+        position: absolute; inset: 0;
+        display: flex; flex-direction: column; align-items: center;
+        justify-content: center; gap: 0.85rem;
+        color: #71717a; text-align: center; padding: 2rem;
+      }
+      .placeholder-icon { font-size: 2.5rem }
+      .placeholder p { font-size: 0.86rem; max-width: 360px; line-height: 1.65 }
+      .code-block {
+        background: #fafafa; border: 1px solid #e4e4e7; border-radius: 5px;
+        padding: 0.65rem 0.85rem; font-family: monospace; font-size: 0.74rem;
+        color: #52525b; text-align: left; width: 100%; max-width: 400px;
+        white-space: pre; line-height: 1.6;
+      }
+      .code-block .k { color: #7c3aed }
+      .code-block .s { color: #059669 }
+    </style>
+  </head>
+  <body>
+
+    <!-- File:// warning — shown via JS below -->
+    <div id="file-warning">
+      <strong>Must be served over HTTP.</strong>
+      Open this file from a local server, not directly in the browser.
+      Run: <code>npx http-server . -p 8080</code> in the
+      <code>delphi-first-message/</code> folder, then visit
+      <code>http://localhost:8080/demo/</code>
+    </div>
+
+    <header>
+      <h1>Delphi First Message</h1>
+      <span class="badge">demo</span>
+    </header>
+
+    <div class="layout">
+
+      <!-- ── Left panel ──────────────────────────────────────────── -->
+      <aside class="panel">
+
+        <!-- Embed config -->
+        <div class="section">
+          <h2>Embed Config</h2>
+
+          <label>
+            Delphi Config ID
+            <span class="hint">— paste your config ID then click Load</span>
+          </label>
+          <div class="row">
+            <input id="cfg-id" type="text" placeholder="48d9a28a-…" />
+            <button class="btn btn-sm" onclick="loadEmbed()">Load</button>
+          </div>
+
+          <label>Height</label>
+          <div class="row">
+            <input id="cfg-height" type="text" value="700px" />
+          </div>
+
+          <label>Starting page (default)</label>
+          <select id="cfg-landing">
+            <option value="OVERVIEW">OVERVIEW</option>
+            <option value="CHAT">CHAT</option>
+            <option value="VOICE">VOICE</option>
+          </select>
+        </div>
+
+        <!-- URL builder -->
+        <div class="section">
+          <h2>URL Builder</h2>
+
+          <label>First message <span class="hint">(?q=)</span></label>
+          <input id="b-msg" type="text" placeholder="e.g. Tell me about yourself" />
+
+          <label>Override starting page <span class="hint">(?page=, optional)</span></label>
+          <select id="b-page">
+            <option value="">— none —</option>
+            <option value="CHAT">CHAT</option>
+            <option value="VOICE">VOICE</option>
+            <option value="OVERVIEW">OVERVIEW</option>
+          </select>
+
+          <div class="url-box" id="url-preview"></div>
+
+          <button class="btn btn-primary" onclick="applyURL()">Apply &amp; reload page</button>
+        </div>
+
+        <!-- Quick examples -->
+        <div class="section">
+          <h2>Quick Examples</h2>
+          <div class="examples">
+            <button class="ex-btn" onclick="ex('Tell me about yourself','CHAT')">
+              First message + force CHAT page
+              <code>?q=Tell+me+about+yourself&amp;page=CHAT</code>
+            </button>
+            <button class="ex-btn" onclick="ex('What can you help me with?','')">
+              First message only
+              <code>?q=What+can+you+help+me+with%3F</code>
+            </button>
+            <button class="ex-btn" onclick="ex('','VOICE')">
+              Starting page only (no message)
+              <code>?page=VOICE</code>
+            </button>
+            <button class="ex-btn" onclick="ex('','')">
+              No params — plain embed
+              <code>(none)</code>
+            </button>
+          </div>
+        </div>
+
+        <!-- Live log -->
+        <div class="section">
+          <h2>
+            Script Log
+            <button class="btn btn-sm" style="float:right;margin-top:-2px" onclick="clearLog()">
+              Clear
+            </button>
+          </h2>
+          <div class="log" id="log"></div>
+        </div>
+
+      </aside>
+
+      <!-- ── Right embed area ──────────────────────────────────────── -->
+      <main class="embed-area">
+        <div class="toolbar">
+          <span class="dot" id="status-dot"></span>
+          <span class="toolbar-url" id="toolbar-url">No embed loaded</span>
+          <button class="btn btn-sm" onclick="loadEmbed()">↺ Reload</button>
+        </div>
+
+        <!--
+          The Delphi loader injects the <iframe> into this div.
+          The id must match window.delphi.page.container.selector = "#delphi-container".
+        -->
+        <div id="delphi-container">
+          <div class="placeholder" id="placeholder">
+            <div class="placeholder-icon">🤖</div>
+            <p>
+              Enter your <strong>Delphi Config ID</strong> above and click
+              <strong>Load</strong> to initialise the embed via the Delphi loader.
+            </p>
+            <div class="code-block"><span class="k">window.delphi</span>.page = {
+  <span class="k">config</span>: <span class="s">"YOUR_CONFIG_ID"</span>,
+  overrides: { landingPage: <span class="s">"OVERVIEW"</span> },
+  container: { selector: <span class="s">"#delphi-container"</span> }
+}</div>
+            <p style="font-size:0.75rem;color:#a1a1aa">
+              Then use the URL builder to test <code>?q=</code> and <code>?page=</code>.
+            </p>
+          </div>
+        </div>
+      </main>
+
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         The script — this ONE line is all you need on a real page
+         ══════════════════════════════════════════════════════ -->
+    <!-- delphi-first-message.js inlined — no separate HTTP request needed -->
+    <script>
+/**
+ * Delphi AI — First Message  (dist build, compiled from src/)
+ *
+ * Drop this single file into any HTML / React / Vue / Nuxt / Next.js page
+ * that contains a Delphi AI embed and it will auto-fill and send a first
+ * message from the URL.
+ *
+ * Prerequisites:
+ *   • The page must be served over HTTP/HTTPS (not file://)
+ *   • Use the Delphi loader script (embed.delphi.ai/loader.js) to create the
+ *     embed — a direct <iframe src="https://delphi.ai/..."> blocks document
+ *     access from a different origin.
+ *
+ * URL Parameters:
+ *   ?fm=Hello%20World   → message to auto-send once the chat textarea appears
+ *   ?page=CHAT          → optional starting page: CHAT | VOICE | OVERVIEW
+ *
+ * Minimal page setup:
+ *   <div id="delphi-container"></div>
+ *   <script>
+ *     window.delphi = { page: {
+ *       config: "YOUR_CONFIG_ID",
+ *       overrides: { landingPage: "OVERVIEW" },
+ *       container: { selector: "#delphi-container", width: "100%", height: "700px" }
+ *     }};
+ *   <\/script>
+ *   <script src="https://embed.delphi.ai/loader.js" async><\/script>
+ *   <script src="delphi-first-message.js"><\/script>
+ *
+ * See README.md and src/ for full documentation.
+ */
+;(function () {
+  'use strict'
+
+  // ============================================================
+  // config.ts — edit to customise behaviour
+  // ============================================================
+
+  /** URL param name for the first message (default: ?q=) */
+  var PARAM_FM = 'q'
+
+  /** URL param name for the starting embed page (default: ?page=) */
+  var PARAM_PAGE = 'page'
+
+  /**
+   * ID of the container element where the Delphi loader injects the iframe.
+   * Must match window.delphi.page.container.selector on your page.
+   */
+  var CONTAINER_ID = 'delphi-container'
+
+  /**
+   * CSS selectors to find the Delphi embed iframe (tried in priority order):
+   *  1. Loader-injected iframe inside the known container
+   *  2. Direct iframe whose src contains "delphi.ai"
+   *  3. Any iframe with a data-delphi attribute
+   */
+  var IFRAME_SELECTOR = [
+    '#' + CONTAINER_ID + ' iframe',
+    'iframe[src*="delphi.ai"]',
+    'iframe[data-delphi]',
+  ].join(', ')
+
+  /**
+   * CSS selectors for the chat input inside the embed.
+   * Covers both the chat page (textarea) and the overview page (input[type="text"]).
+   * Message is only sent when this element is found AND visible.
+   */
+  var TEXTAREA_SELECTOR = [
+    // Chat page — full textarea
+    'textarea#message',
+    'textarea[name="message"]',
+    // Overview page — single-line text input
+    'input#message',
+    'input[name="message"]',
+    // Fallback by placeholder
+    'textarea[placeholder*="message" i]',
+    'textarea[placeholder*="type" i]',
+    'input[type="text"][placeholder*="question" i]',
+    'input[type="text"][placeholder*="ask" i]',
+  ].join(', ')
+
+  /** Max retries while waiting for the textarea */
+  var MAX_ATTEMPTS = 20
+
+  /** Ms between retry attempts */
+  var RETRY_DELAY_MS = 500
+
+  /** Ms between filling the textarea and clicking submit */
+  var SEND_DELAY_MS = 300
+
+  /** Ms before the first attempt (lets the loader inject and render the embed) */
+  var INITIAL_WAIT_MS = 1500
+
+  // ============================================================
+  // helpers/logger.ts
+  // ============================================================
+
+  var PREFIX = '[DelphiFirstMessage]'
+
+  function log(msg) {
+    console.log(PREFIX + ' ' + msg)
+  }
+
+  function warn(msg) {
+    console.warn(PREFIX + ' ' + msg)
+  }
+
+  // ============================================================
+  // helpers/params.ts  — Part 1: read URL params
+  // ============================================================
+
+  /**
+   * Read ?fm and ?page from the current URL.
+   * @returns {{ firstMessage: string|null, startPage: string|null }}
+   */
+  function readParams() {
+    try {
+      var params = new URLSearchParams(window.location.search)
+      var fm = params.get(PARAM_FM)
+      var page = params.get(PARAM_PAGE)
+      return {
+        firstMessage: fm ? decodeURIComponent(fm).trim() : null,
+        startPage: page ? page.toUpperCase().trim() : null,
+      }
+    } catch (_) {
+      return { firstMessage: null, startPage: null }
+    }
+  }
+
+  // ============================================================
+  // helpers/page.ts — apply starting page to the embed
+  // ============================================================
+
+  /**
+   * Set the embed's starting page via one of two strategies:
+   *
+   * A) window.delphi.page.overrides.landingPage  (Delphi loader — preferred)
+   *    Must run BEFORE embed.delphi.ai/loader.js initialises.
+   *
+   * B) Append ?landingPage=PAGE to the iframe src  (direct iframe fallback)
+   *    Applied immediately or via MutationObserver if the iframe isn't in the DOM yet.
+   *
+   * @param {string} page  CHAT | VOICE | OVERVIEW
+   */
+  function applyStartPage(page) {
+    // Strategy A
+    var delphi = window.delphi
+    if (delphi && delphi.page) {
+      delphi.page.overrides = Object.assign({}, delphi.page.overrides, { landingPage: page })
+      log('Set landing page via window.delphi.page.overrides: ' + page)
+      return
+    }
+
+    // Strategy B
+    function tryModify() {
+      var iframe = document.querySelector(IFRAME_SELECTOR)
+      if (!iframe || !iframe.src) return false
+      try {
+        var url = new URL(iframe.src)
+        url.searchParams.set('landingPage', page)
+        iframe.src = url.toString()
+        log('Set landing page via iframe src param: ' + page)
+        return true
+      } catch (_) {
+        warn('Could not modify iframe src to set starting page')
+        return false
+      }
+    }
+
+    if (!tryModify()) {
+      var observer = new MutationObserver(function () {
+        if (tryModify()) observer.disconnect()
+      })
+      observer.observe(document.documentElement, { childList: true, subtree: true })
+      log('Watching for iframe to appear before applying landing page: ' + page)
+    }
+  }
+
+  // ============================================================
+  // helpers/dom.ts — fill textarea and submit
+  // ============================================================
+
+  /**
+   * Check whether an element is not explicitly hidden.
+   *
+   * offsetWidth/offsetHeight are intentionally NOT checked here:
+   *  - Inputs inside flex containers inside iframes can report 0 before the
+   *    layout is fully computed, causing false negatives on the overview page.
+   *  - Our selectors are specific enough to confirm we are on the right embed
+   *    page, so we only need to guard against explicit CSS hide states.
+   * @param {HTMLElement} el
+   * @param {Window} view  iframe.contentWindow
+   */
+  function isVisible(el, view) {
+    var style = view.getComputedStyle(el)
+    return (
+      style.display !== 'none' &&
+      style.visibility !== 'hidden' &&
+      style.opacity !== '0'
+    )
+  }
+
+  /**
+   * Find the submit button nearest to the input element and click it.
+   * Falls back to an Enter keypress when no button is found.
+   * Works for both textarea (chat page) and input (overview page).
+   * @param {HTMLTextAreaElement|HTMLInputElement} el
+   * @param {Window} iframeView
+   */
+  function clickSubmit(el, iframeView) {
+    var submitBtn = null
+
+    // Strategy 1: explicit type="submit" button in the parent form
+    var form = el.closest('form')
+    if (form) submitBtn = form.querySelector('button[type="submit"]')
+
+    // Strategy 2: visible SVG-icon button in the same container
+    // Delphi uses an SVG arrow / paper-plane on its send button
+    if (!submitBtn) {
+      var container = el.parentElement
+        ? el.parentElement.parentElement || el.parentElement
+        : null
+      if (container) {
+        var buttons = Array.from(container.querySelectorAll('button'))
+        submitBtn =
+          buttons.find(function (btn) {
+            return (
+              btn.offsetParent !== null &&
+              btn.querySelector('svg') !== null &&
+              !btn.disabled &&
+              btn.closest('header') === null
+            )
+          }) || null
+      }
+    }
+
+    if (submitBtn) {
+      log('Clicking submit — message sent!')
+      submitBtn.click()
+    } else {
+      warn('Submit button not found — simulating Enter key')
+      el.dispatchEvent(
+        new iframeView.KeyboardEvent('keydown', {
+          bubbles: true,
+          cancelable: true,
+          key: 'Enter',
+          code: 'Enter',
+          keyCode: 13,
+        }),
+      )
+    }
+  }
+
+  /**
+   * Locate the chat input (textarea or text input), fill it, and trigger submit.
+   *
+   * Uses the native HTMLTextAreaElement / HTMLInputElement setter so
+   * React / Vue / Angular reactivity watchers fire correctly.
+   *
+   * Works on both Delphi embed pages:
+   *   Chat page     → <textarea id="message">
+   *   Overview page → <input type="text" id="message">
+   *
+   * @param {Document} iframeDoc
+   * @param {Window}   iframeView
+   * @param {string}   message
+   * @returns {boolean}  true when the send was initiated; false to signal retry
+   */
+  function fillAndSubmit(iframeDoc, iframeView, message) {
+    var el = iframeDoc.querySelector(TEXTAREA_SELECTOR)
+
+    // Log what we found so failures are debuggable
+    if (!el) {
+      log('No element matched selector in iframe (readyState: ' + iframeDoc.readyState + ')')
+      return false
+    }
+
+    // Only block on an explicit display:none.
+    // We do NOT check opacity/visibility/offsetWidth because:
+    //  - Cross-frame layout (offsetWidth/Height) is unreliable for flex inputs
+    //    inside iframes before layout completes — gives false negatives.
+    //  - Opacity can be 0 mid-animation.
+    //  - Our selectors (input#message, textarea#message) are specific enough that
+    //    finding the element means we are on the right embed page.
+    var display = ''
+    try {
+      display = iframeView.getComputedStyle(el).display
+    } catch (_) {
+      // getComputedStyle can throw if the iframe navigated cross-origin between checks
+      log('getComputedStyle unavailable — proceeding anyway')
+    }
+
+    if (display === 'none') {
+      log('Input has display:none — still loading, retrying...')
+      return false
+    }
+
+    log('Found chat input (<' + el.tagName.toLowerCase() + ' id="' + el.id + '">) — filling message...')
+
+    // Pick the correct prototype so we trigger the right reactivity chain:
+    //   textarea → HTMLTextAreaElement.prototype
+    //   input    → HTMLInputElement.prototype
+    var proto = el.tagName.toLowerCase() === 'textarea'
+      ? iframeView.HTMLTextAreaElement.prototype
+      : iframeView.HTMLInputElement.prototype
+
+    var descriptor = Object.getOwnPropertyDescriptor(proto, 'value')
+    var nativeSetter = descriptor && descriptor.set
+
+    if (nativeSetter) {
+      nativeSetter.call(el, message)
+    } else {
+      el.value = message
+    }
+
+    el.dispatchEvent(new iframeView.Event('input', { bubbles: true }))
+    el.dispatchEvent(new iframeView.Event('change', { bubbles: true }))
+
+    setTimeout(function () {
+      clickSubmit(el, iframeView)
+    }, SEND_DELAY_MS)
+
+    return true
+  }
+
+  // ============================================================
+  // inject.ts  — Part 2: find iframe and orchestrate
+  // ============================================================
+
+  /**
+   * Find the Delphi embed iframe, wait for it to be accessible, then inject
+   * the message once the chat textarea is visible.
+   *
+   * Retries up to MAX_ATTEMPTS times.  If the textarea never appears (e.g.
+   * the embed is on the voice page), it warns and stops gracefully.
+   *
+   * @param {string} message
+   */
+  function sendFirstMessage(message) {
+    var attempts = 0
+
+    function attempt() {
+      attempts++
+
+      // Step 1: find the iframe
+      var iframe = document.querySelector(IFRAME_SELECTOR)
+      if (!iframe) {
+        if (attempts < MAX_ATTEMPTS) {
+          log('Waiting for Delphi iframe (' + attempts + '/' + MAX_ATTEMPTS + ')...')
+          setTimeout(attempt, RETRY_DELAY_MS)
+        } else {
+          warn(
+            'Delphi iframe not found after max attempts. ' +
+              'Check CONTAINER_ID / IFRAME_SELECTOR in dist/delphi-first-message.js.',
+          )
+        }
+        return
+      }
+
+      // Step 2: access the iframe document
+      var iframeDoc, iframeView
+      try {
+        iframeDoc = iframe.contentDocument
+        iframeView = iframe.contentWindow
+      } catch (_) {
+        warn(
+          'Cannot access iframe document (cross-origin). ' +
+            'Use the Delphi loader script instead of a direct <iframe src>.',
+        )
+        return
+      }
+
+      if (!iframeDoc || !iframeView || iframeDoc.readyState === 'loading') {
+        if (attempts < MAX_ATTEMPTS) {
+          log('Iframe document not ready (' + attempts + '/' + MAX_ATTEMPTS + ')...')
+          setTimeout(attempt, RETRY_DELAY_MS)
+        } else {
+          warn('Iframe document never became ready.')
+        }
+        return
+      }
+
+      // Step 3: fill and submit — retry if textarea not yet visible
+      var sent = fillAndSubmit(iframeDoc, iframeView, message)
+      if (!sent) {
+        if (attempts < MAX_ATTEMPTS) {
+          log(
+            'Chat input not visible (' +
+              attempts +
+              '/' +
+              MAX_ATTEMPTS +
+              ') — embed may not be on chat page',
+          )
+          setTimeout(attempt, RETRY_DELAY_MS)
+        } else {
+          warn(
+            'Chat input not found after ' +
+              MAX_ATTEMPTS +
+              ' attempts. ' +
+              'Try adding ?page=CHAT to force the chat page.',
+          )
+        }
+      }
+    }
+
+    setTimeout(attempt, INITIAL_WAIT_MS)
+  }
+
+  // ============================================================
+  // index.ts — init
+  // ============================================================
+
+  function init() {
+    var params = readParams()
+    var firstMessage = params.firstMessage
+    var startPage = params.startPage
+
+    if (!firstMessage && !startPage) return
+
+    log('Initializing — q: "' + firstMessage + '", page: "' + startPage + '"')
+
+    // Apply starting page before the Delphi loader runs
+    if (startPage) applyStartPage(startPage)
+
+    if (firstMessage) {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () {
+          sendFirstMessage(firstMessage)
+        })
+      } else {
+        sendFirstMessage(firstMessage)
+      }
+    }
+  }
+
+  init()
+})()
+
+    </script>
+
+    <script>
+      // ── File:// detection ──────────────────────────────────────────────────
+      if (window.location.protocol === 'file:') {
+        document.getElementById('file-warning').style.display = 'block'
+      }
+
+      // ── Intercept console so [DelphiFirstMessage] lines appear in the panel ─
+      ;(function () {
+        var box = document.getElementById('log')
+        var queue = []
+
+        function append(cls, text) {
+          if (!box) { queue.push([cls, text]); return }
+          var line = document.createElement('div')
+          line.className = cls
+          line.textContent = text
+          box.appendChild(line)
+          box.scrollTop = box.scrollHeight
+          while (box.children.length > 80) box.removeChild(box.firstChild)
+        }
+
+        var orig = { log: console.log, warn: console.warn, error: console.error }
+        ;['log','warn','error'].forEach(function(level) {
+          console[level] = function() {
+            orig[level].apply(console, arguments)
+            var msg = Array.from(arguments).join(' ')
+            if (msg.indexOf('[DelphiFirstMessage]') !== -1) {
+              append(level === 'log' ? 'i' : level === 'warn' ? 'w' : 'e', msg)
+            }
+          }
+        })
+
+        document.addEventListener('DOMContentLoaded', function () {
+          box = document.getElementById('log')
+          box.innerHTML = '<span class="i">Ready — load an embed to start.</span>'
+          queue.forEach(function (q) { append(q[0], q[1]) })
+          queue = []
+        })
+      })()
+
+      function clearLog() {
+        document.getElementById('log').innerHTML = '<span class="i">Log cleared.</span>'
+      }
+
+      // ── Delphi embed loader ────────────────────────────────────────────────
+
+      var BASE = window.location.origin + window.location.pathname
+
+      function loadEmbed() {
+        var configId = document.getElementById('cfg-id').value.trim()
+        if (!configId) { alert('Enter a Delphi Config ID first.'); return }
+
+        var height   = document.getElementById('cfg-height').value.trim() || '700px'
+        var landing  = document.getElementById('cfg-landing').value
+
+        // Override landing page from URL ?page= param if present
+        var urlPage = new URLSearchParams(window.location.search).get('page')
+        if (urlPage) landing = urlPage.toUpperCase()
+
+        // Clean up previous Delphi instance
+        ;['delphi-page-script','delphi-page-bootstrap'].forEach(function(id) {
+          var el = document.getElementById(id)
+          if (el) el.remove()
+        })
+
+        // Clear old iframe (loader appends into the container)
+        var container = document.getElementById('delphi-container')
+        var oldIframe = container.querySelector('iframe')
+        if (oldIframe) oldIframe.remove()
+
+        document.getElementById('placeholder').style.display = 'flex'
+
+        // ── Step 1: create the config script tag ──────────────────────────
+        // The Delphi loader looks for document.getElementById('delphi-page-script')
+        // and reads the config from it — setting window.delphi directly is not enough.
+        var configScript = document.createElement('script')
+        configScript.id   = 'delphi-page-script'
+        configScript.type = 'text/javascript'
+        configScript.text = [
+          'window.delphi = {',
+          '  page: {',
+          '    config: "' + configId + '",',
+          '    overrides: { landingPage: "' + landing + '" },',
+          '    container: {',
+          '      selector: "#delphi-container",',
+          '      width: "100%",',
+          '      height: "' + height + '"',
+          '    }',
+          '  }',
+          '};'
+        ].join('\n')
+        document.body.appendChild(configScript)
+
+        // ── Step 2: inject the Delphi loader script ───────────────────────
+        var dot = document.getElementById('status-dot')
+        var urlEl = document.getElementById('toolbar-url')
+
+        dot.className = 'dot loading'
+        urlEl.textContent = 'Loading embed.delphi.ai/loader.js…'
+
+        var script = document.createElement('script')
+        script.id = 'delphi-page-bootstrap'
+        script.src = 'https://embed.delphi.ai/loader.js'
+        script.async = true
+
+        script.onload = function () {
+          console.log('[Demo] Delphi loader script loaded — waiting for iframe…')
+          dot.className = 'dot loading'
+          urlEl.textContent = 'Loader ready — injecting iframe…'
+
+          // Wait for the loader to inject the iframe into #delphi-container
+          var tries = 0
+          var interval = setInterval(function () {
+            tries++
+            var iframe = container.querySelector('iframe')
+            if (iframe) {
+              clearInterval(interval)
+              var ph = document.getElementById('placeholder')
+              if (ph) ph.style.display = 'none'
+              dot.className = 'dot ok'
+              urlEl.textContent = iframe.src || 'Delphi embed active'
+              console.log('[Demo] Iframe injected by loader: ' + iframe.src)
+            } else if (tries > 20) {
+              clearInterval(interval)
+              dot.className = 'dot'
+              urlEl.textContent = 'Iframe not found after timeout'
+              console.warn('[Demo] Loader ran but no iframe appeared in #delphi-container')
+            }
+          }, 500)
+        }
+
+        script.onerror = function () {
+          dot.className = 'dot'
+          urlEl.textContent = 'Failed to load Delphi loader script'
+          console.error('[Demo] Could not load embed.delphi.ai/loader.js')
+        }
+
+        // Persist config ID so it survives page reloads from the URL builder
+        sessionStorage.setItem('demo_config_id', configId)
+        sessionStorage.setItem('demo_height', height)
+        sessionStorage.setItem('demo_landing', document.getElementById('cfg-landing').value)
+
+        document.body.appendChild(script)
+      }
+
+      // ── URL builder ────────────────────────────────────────────────────────
+
+      function buildURL(msg, page) {
+        var url = new URL(BASE)
+        if (msg.trim())  url.searchParams.set('q', msg.trim())
+        if (page.trim()) url.searchParams.set('page', page.trim())
+        return url.toString()
+      }
+
+      function renderURL() {
+        var msg  = document.getElementById('b-msg').value
+        var page = document.getElementById('b-page').value
+        var url  = buildURL(msg, page)
+        var el   = document.getElementById('url-preview')
+
+        var parts = url.split('?')
+        var html  = esc(parts[0])
+        if (parts[1]) {
+          html += '?'
+          parts[1].split('&').forEach(function (pair, i) {
+            if (i) html += '&'
+            var kv = pair.split('=')
+            html += '<span class="p">' + esc(kv[0]) + '</span>='
+                  + '<span class="v">' + esc(decodeURIComponent(kv[1] || '')) + '</span>'
+          })
+        }
+        el.innerHTML = html || '<span style="color:#a1a1aa">—</span>'
+      }
+
+      function esc(s) {
+        return String(s)
+          .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      }
+
+      function applyURL() {
+        window.location.href = buildURL(
+          document.getElementById('b-msg').value,
+          document.getElementById('b-page').value,
+        )
+      }
+
+      function ex(msg, page) {
+        document.getElementById('b-msg').value  = msg
+        document.getElementById('b-page').value = page
+        renderURL()
+        applyURL()
+      }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        // Restore inputs from URL params
+        var params = new URLSearchParams(window.location.search)
+        var fm   = params.get('q')
+        var page = params.get('page')
+        if (fm)   document.getElementById('b-msg').value  = decodeURIComponent(fm)
+        if (page) document.getElementById('b-page').value = page.toUpperCase()
+
+        // ?config= URL param lets the host page (e.g. jim-carter-ai) pass
+        // the Delphi config ID directly without manual entry
+        var urlConfig = params.get('config')
+        if (urlConfig) {
+          sessionStorage.setItem('demo_config_id', urlConfig)
+        }
+
+        // Restore embed config from sessionStorage (or the just-stored URL config)
+        var savedId      = sessionStorage.getItem('demo_config_id')
+        var savedHeight  = sessionStorage.getItem('demo_height')
+        var savedLanding = sessionStorage.getItem('demo_landing')
+        if (savedId) {
+          document.getElementById('cfg-id').value = savedId
+          if (savedHeight)  document.getElementById('cfg-height').value  = savedHeight
+          if (savedLanding) document.getElementById('cfg-landing').value = savedLanding
+          loadEmbed()
+        }
+
+        renderURL()
+        document.getElementById('b-msg').addEventListener('input', renderURL)
+        document.getElementById('b-page').addEventListener('change', renderURL)
+      })
+    </script>
+
+  </body>
+</html>

@@ -1,0 +1,73 @@
+/**
+ * All configurable constants for the Delphi First Message script.
+ * Edit this file to adapt the script to your specific setup.
+ */
+
+// ── URL parameters ──────────────────────────────────────────────────────────
+
+/** Name of the query param that carries the first message. Default: ?q= */
+export const PARAM_FM = 'q';
+
+/** Name of the query param that sets the embed starting page. Default: ?page= */
+export const PARAM_PAGE = 'page';
+
+// ── Embed targeting ─────────────────────────────────────────────────────────
+
+/**
+ * ID of the container element where the Delphi loader injects the iframe.
+ * Must match the `container.selector` value in window.delphi.page config.
+ *
+ * Example on your page:
+ *   <div id="delphi-container"></div>
+ *   window.delphi.page.container.selector = "#delphi-container"
+ */
+export const CONTAINER_ID = 'delphi-container';
+
+/**
+ * CSS selector(s) used to locate the Delphi embed iframe.
+ * Priority order:
+ *  1. Loader-injected iframe inside the known container
+ *  2. Direct iframe whose src contains "delphi.ai"
+ *  3. Any iframe with a data-delphi attribute
+ */
+export const IFRAME_SELECTOR = [
+    `#${CONTAINER_ID} iframe`,
+    'iframe[src*="delphi.ai"]',
+    'iframe[data-delphi]',
+].join(', ');
+
+/**
+ * CSS selectors for the chat input inside the Delphi embed (tried in order).
+ * Covers both the chat page (textarea) and the overview page (input[type="text"]).
+ * The script only sends the message when this element is found AND visible.
+ */
+export const TEXTAREA_SELECTOR = [
+  // Chat page — full textarea
+  'textarea#message',
+  'textarea[name="message"]',
+  // Overview page — single-line text input
+  'input#message',
+  'input[name="message"]',
+  // Fallback by placeholder
+  'textarea[placeholder*="message" i]',
+  'textarea[placeholder*="type" i]',
+  'input[type="text"][placeholder*="question" i]',
+  'input[type="text"][placeholder*="ask" i]',
+].join(', ');
+
+// ── Timing ───────────────────────────────────────────────────────────────────
+
+/** Maximum number of attempts while waiting for the chat textarea to appear. */
+export const MAX_ATTEMPTS = 20;
+
+/** Milliseconds between retry attempts. */
+export const RETRY_DELAY_MS = 500;
+
+/** Milliseconds to wait between filling the textarea and clicking the submit button. */
+export const SEND_DELAY_MS = 300;
+
+/**
+ * Milliseconds to wait before the very first attempt.
+ * Gives the Delphi loader time to inject the iframe and render the chat page.
+ */
+export const INITIAL_WAIT_MS = 1500;
