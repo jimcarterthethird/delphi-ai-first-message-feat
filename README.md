@@ -19,11 +19,16 @@ No build step. No dependencies. Copy the folder, include one `<script>` tag.
 
 ### 1. Set up the Delphi embed using the loader
 
+> **Important:** the config `<script>` tag **must** have `id="delphi-page-script"`.  
+> The Delphi loader calls `document.getElementById('delphi-page-script')` to read the  
+> configuration — setting `window.delphi` without this ID will throw  
+> *"Script tag with id 'delphi-page-script' not found"* and the embed will not load.
+
 ```html
 <!-- Container where the loader will inject the iframe -->
 <div id="delphi-container"></div>
 
-<script>
+<script id="delphi-page-script">
     window.delphi = {
         page: {
             config: 'YOUR_DELPHI_CONFIG_ID',
@@ -181,7 +186,8 @@ var IFRAME_SELECTOR = 'iframe[data-delphi]';
     <body>
         <div id="delphi-container"></div>
 
-        <script>
+        <!-- id="delphi-page-script" is required — the loader reads config from this tag -->
+        <script id="delphi-page-script">
             window.delphi = {
                 page: {
                     config: 'YOUR_CONFIG_ID',
@@ -204,6 +210,86 @@ var IFRAME_SELECTOR = 'iframe[data-delphi]';
 ```
 
 URL: `index.html?q=Hello&page=CHAT`
+
+---
+
+### Plain React (hooks / `useEffect`)
+
+For React apps **without** Next.js (no `<Script>` component available), inject the
+scripts dynamically in a `useEffect`. Key rules:
+
+- Use `useRef` for the injection guard, **not** `useState` — state changes re-trigger
+  the effect, which causes React StrictMode's cleanup to delete `window.delphi` before
+  the async loader finishes executing.
+- Create a `<script id="delphi-page-script">` element (required by the loader).
+- Inject the first-message plugin **inline** (via a `?raw` / bundled string import) to
+  avoid a separate HTTP request that can return the SPA's HTML catch-all in production.
+
+```tsx
+// DelphiEmbed.tsx
+import { useEffect, useRef } from 'react';
+// Bundle the plugin at build time so no runtime HTTP request is needed.
+// With Vite: import delphiScript from './delphi-first-message.js?raw';
+// With webpack/CRA: require the file as a raw string (e.g. via raw-loader).
+import delphiScript from './delphi-first-message.js?raw'; // Vite example
+
+interface Props {
+    configId: string;
+    landingPage?: string;
+    search?: string; // window.location.search passed from the parent route
+}
+
+export default function DelphiEmbed({ configId, landingPage = 'OVERVIEW', search = '' }: Props) {
+    const injected = useRef(false);
+
+    useEffect(() => {
+        if (injected.current) return;
+        injected.current = true;
+
+        // 1. Config script tag — the loader requires id="delphi-page-script"
+        const configScript = document.createElement('script');
+        configScript.id = 'delphi-page-script';
+        configScript.type = 'text/javascript';
+        configScript.text = [
+            'window.delphi = {',
+            '  page: {',
+            `    config: ${JSON.stringify(configId)},`,
+            `    overrides: { landingPage: ${JSON.stringify(landingPage)} },`,
+            '    container: { selector: "#delphi-container", width: "100%", height: "100vh" }',
+            '  }',
+            '};',
+        ].join('\n');
+        document.body.appendChild(configScript);
+
+        // 2. Delphi loader (reads delphi-page-script, injects the iframe)
+        const loader = document.createElement('script');
+        loader.id = 'delphi-page-bootstrap';
+        loader.src = 'https://embed.delphi.ai/loader.js';
+        loader.async = true;
+        document.body.appendChild(loader);
+
+        // 3. First-message plugin — inline so there is no network request
+        const plugin = document.createElement('script');
+        plugin.textContent = delphiScript;
+        document.body.appendChild(plugin);
+
+        return () => {
+            injected.current = false;
+            ['delphi-page-script', 'delphi-page-bootstrap'].forEach((id) => {
+                document.getElementById(id)?.remove();
+            });
+            // Do NOT delete window.delphi here — the async loader may still be reading it.
+        };
+    }, [search]); // re-run when the URL search string changes
+
+    return (
+        <div
+            id='delphi-container'
+            style={{ display: 'block', width: '100vw', height: '100vh' }}
+        />
+    );
+}
+```
 
 ---
 
@@ -674,12 +760,14 @@ The demo has:
 
 ## Troubleshooting
 
-| Symptom                                  | Cause                                       | Fix                                                                  |
-| ---------------------------------------- | ------------------------------------------- | -------------------------------------------------------------------- |
-| Nothing happens                          | Page opened as `file://`                    | Serve from localhost                                                 |
-| `cross-origin` warning                   | Direct `<iframe src>` from different domain | Switch to the loader script approach                                 |
-| `iframe not found`                       | `CONTAINER_ID` mismatch                     | Check `window.delphi.page.container.selector` matches `CONTAINER_ID` |
-| `chat input not found after 20 attempts` | Embed not on chat page                      | Add `?page=CHAT` to the URL                                          |
-| Message fills but doesn't submit         | Submit button selector changed              | Increase `SEND_DELAY_MS` or inspect the button's classes             |
+| Symptom                                                   | Cause                                                          | Fix                                                                              |
+| --------------------------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Nothing happens                                           | Page opened as `file://`                                       | Serve from localhost                                                             |
+| `cross-origin` warning                                    | Direct `<iframe src>` from different domain                    | Switch to the loader script approach                                             |
+| `Script tag with id 'delphi-page-script' not found`       | Config `<script>` tag is missing `id="delphi-page-script"`     | Add the ID — see Quick Start                                                     |
+| `Invalid or missing Delphi object`                        | `window.delphi` deleted before loader ran (React StrictMode)   | Use `useRef` guard and don't `delete window.delphi` in cleanup — see React hooks |
+| `iframe not found`                                        | `CONTAINER_ID` mismatch                                        | Check `window.delphi.page.container.selector` matches `CONTAINER_ID`             |
+| `chat input not found after 20 attempts`                  | Embed not on chat page                                         | Add `?page=CHAT` to the URL                                                      |
+| Message fills but doesn't submit                          | Submit button selector changed                                 | Increase `SEND_DELAY_MS` or inspect the button's classes                         |
 
 ---

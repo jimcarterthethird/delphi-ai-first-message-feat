@@ -42,17 +42,17 @@ export const IFRAME_SELECTOR = [
  * The script only sends the message when this element is found AND visible.
  */
 export const TEXTAREA_SELECTOR = [
-  // Chat page — full textarea
-  'textarea#message',
-  'textarea[name="message"]',
-  // Overview page — single-line text input
-  'input#message',
-  'input[name="message"]',
-  // Fallback by placeholder
-  'textarea[placeholder*="message" i]',
-  'textarea[placeholder*="type" i]',
-  'input[type="text"][placeholder*="question" i]',
-  'input[type="text"][placeholder*="ask" i]',
+    // Chat page — full textarea
+    'textarea#message',
+    'textarea[name="message"]',
+    // Overview page — single-line text input
+    'input#message',
+    'input[name="message"]',
+    // Fallback by placeholder
+    'textarea[placeholder*="message" i]',
+    'textarea[placeholder*="type" i]',
+    'input[type="text"][placeholder*="question" i]',
+    'input[type="text"][placeholder*="ask" i]',
 ].join(', ');
 
 // ── Timing ───────────────────────────────────────────────────────────────────
