@@ -22,7 +22,7 @@ No build step. No dependencies. Copy the folder, include one `<script>` tag.
 > **Important:** the config `<script>` tag **must** have `id="delphi-page-script"`.  
 > The Delphi loader calls `document.getElementById('delphi-page-script')` to read the  
 > configuration — setting `window.delphi` without this ID will throw  
-> *"Script tag with id 'delphi-page-script' not found"* and the embed will not load.
+> _"Script tag with id 'delphi-page-script' not found"_ and the embed will not load.
 
 ```html
 <!-- Container where the loader will inject the iframe -->
@@ -239,7 +239,11 @@ interface Props {
     search?: string; // window.location.search passed from the parent route
 }
 
-export default function DelphiEmbed({ configId, landingPage = 'OVERVIEW', search = '' }: Props) {
+export default function DelphiEmbed({
+    configId,
+    landingPage = 'OVERVIEW',
+    search = '',
+}: Props) {
     const injected = useRef(false);
 
     useEffect(() => {
@@ -760,14 +764,14 @@ The demo has:
 
 ## Troubleshooting
 
-| Symptom                                                   | Cause                                                          | Fix                                                                              |
-| --------------------------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Nothing happens                                           | Page opened as `file://`                                       | Serve from localhost                                                             |
-| `cross-origin` warning                                    | Direct `<iframe src>` from different domain                    | Switch to the loader script approach                                             |
-| `Script tag with id 'delphi-page-script' not found`       | Config `<script>` tag is missing `id="delphi-page-script"`     | Add the ID — see Quick Start                                                     |
-| `Invalid or missing Delphi object`                        | `window.delphi` deleted before loader ran (React StrictMode)   | Use `useRef` guard and don't `delete window.delphi` in cleanup — see React hooks |
-| `iframe not found`                                        | `CONTAINER_ID` mismatch                                        | Check `window.delphi.page.container.selector` matches `CONTAINER_ID`             |
-| `chat input not found after 20 attempts`                  | Embed not on chat page                                         | Add `?page=CHAT` to the URL                                                      |
-| Message fills but doesn't submit                          | Submit button selector changed                                 | Increase `SEND_DELAY_MS` or inspect the button's classes                         |
+| Symptom                                             | Cause                                                        | Fix                                                                              |
+| --------------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| Nothing happens                                     | Page opened as `file://`                                     | Serve from localhost                                                             |
+| `cross-origin` warning                              | Direct `<iframe src>` from different domain                  | Switch to the loader script approach                                             |
+| `Script tag with id 'delphi-page-script' not found` | Config `<script>` tag is missing `id="delphi-page-script"`   | Add the ID — see Quick Start                                                     |
+| `Invalid or missing Delphi object`                  | `window.delphi` deleted before loader ran (React StrictMode) | Use `useRef` guard and don't `delete window.delphi` in cleanup — see React hooks |
+| `iframe not found`                                  | `CONTAINER_ID` mismatch                                      | Check `window.delphi.page.container.selector` matches `CONTAINER_ID`             |
+| `chat input not found after 20 attempts`            | Embed not on chat page                                       | Add `?page=CHAT` to the URL                                                      |
+| Message fills but doesn't submit                    | Submit button selector changed                               | Increase `SEND_DELAY_MS` or inspect the button's classes                         |
 
 ---
