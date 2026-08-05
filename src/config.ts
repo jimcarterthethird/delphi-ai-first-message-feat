@@ -55,6 +55,18 @@ export const TEXTAREA_SELECTOR = [
     'input[type="text"][placeholder*="ask" i]',
 ].join(', ');
 
+// ── Native embed URL parameters ─────────────────────────────────────────────
+
+/**
+ * Query param on the embed iframe URL that carries the first message.
+ * The Delphi embed app reads this natively and treats it as the entry-intent
+ * initial prompt, which also forces the CHAT view.
+ */
+export const EMBED_PARAM_FM = 'q';
+
+/** Query param on the embed iframe URL that sets the starting page. */
+export const EMBED_PARAM_PAGE = 'landingPage';
+
 // ── Timing ───────────────────────────────────────────────────────────────────
 
 /** Maximum number of attempts while waiting for the chat textarea to appear. */
@@ -71,3 +83,10 @@ export const SEND_DELAY_MS = 300;
  * Gives the Delphi loader time to inject the iframe and render the chat page.
  */
 export const INITIAL_WAIT_MS = 1500;
+
+/**
+ * Milliseconds to keep watching the DOM for the embed iframe before giving up.
+ * The embed script injects its iframe asynchronously, so the iframe is usually
+ * absent when this script first runs.
+ */
+export const OBSERVE_TIMEOUT_MS = 15000;

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Delphi Embed — Simple Test</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #f4f4f5;
+        color: #18181b;
+        min-height: 100vh;
+        padding: 1.5rem;
+      }
+
+      h1 {
+        font-size: 1.15rem;
+        font-weight: 600;
+        margin-bottom: 0.35rem;
+      }
+
+      p {
+        font-size: 0.875rem;
+        color: #71717a;
+        margin-bottom: 1.25rem;
+      }
+
+      #embed {
+        width: 100%;
+        max-width: 960px;
+        background: #fff;
+        border: 1px solid #e4e4e7;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Delphi Embed — Simple Test</h1>
+    <p>
+      Channel <code>998ce3cc-ad38-4219-ab85-6e88b8cfe0fe</code> · add
+      <code>?q=Hello</code> to test first-message injection
+    </p>
+
+    <div id="embed">
+      <script
+        src="https://www.delphi.ai/embed.js"
+        data-channel="998ce3cc-ad38-4219-ab85-6e88b8cfe0fe"
+        data-mode="inline"
+        data-width="100%"
+        data-height="600"
+        async
+      ></script>
+    </div>
+
+    <!-- Existing first-message dist from this repo -->
+    <script src="../dist/delphi-first-message.js"></script>
+  </body>
+</html>

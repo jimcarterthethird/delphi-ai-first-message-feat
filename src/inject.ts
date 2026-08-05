@@ -1,18 +1,17 @@
 /**
- * Part 2 — Inject message into the Delphi embed.
+ * Legacy loader strategy — type the message into the embed's chat input.
  *
  * Finds the embed iframe, waits for its document to be accessible and the
  * chat textarea to be visible, then fills and submits the message.
  *
- * The script ONLY fires when the chat textarea is found AND visible, so it
- * never accidentally acts on the voice or overview pages of the embed.
+ * Only fires when the chat textarea is found AND visible, so it never
+ * accidentally acts on the voice or overview pages of the embed.
  *
- * Note on iframe document access:
- *   This uses iframe.contentDocument, which requires same-origin access.
- *   It works when using the Delphi loader script (embed.delphi.ai/loader.js)
- *   because the loader creates an initially-accessible iframe document.
- *   Direct <iframe src="https://delphi.ai/..."> from a different origin will
- *   block contentDocument — use the loader approach instead.
+ * ⚠️ Requires same-origin access to iframe.contentDocument, which only the
+ * legacy loader (embed.delphi.ai/loader.js) provides. The current embed
+ * (www.delphi.ai/embed.js) creates a genuinely cross-origin iframe where
+ * contentDocument is permanently unreachable — that setup is handled by
+ * helpers/embed-params.ts instead, and index.ts picks the strategy.
  */
 
 import {

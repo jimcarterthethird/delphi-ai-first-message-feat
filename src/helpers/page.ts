@@ -1,16 +1,18 @@
 /**
- * Apply the starting page to the Delphi embed.
+ * Apply the starting page to a legacy loader embed (embed.delphi.ai/loader.js).
  *
  * Two strategies are tried in order:
  *
  * A) window.delphi.page.overrides.landingPage
- *    Works when this code runs BEFORE embed.delphi.ai/loader.js initialises.
+ *    Works when this code runs BEFORE loader.js initialises.
  *    This is the recommended approach — set window.delphi.page first, then load the script.
  *
  * B) Append ?landingPage=PAGE to the iframe src
- *    Fallback for a direct <iframe src="https://delphi.ai/..."> embed.
- *    Applied immediately if the iframe is already in the DOM, otherwise via
- *    MutationObserver once it appears.
+ *    Fallback once the loader has already injected the iframe. Applied
+ *    immediately if the iframe is in the DOM, otherwise via MutationObserver.
+ *
+ * For the current embed (www.delphi.ai/embed.js), helpers/embed-params.ts sets
+ * the landing page alongside the first message in a single src rewrite.
  */
 
 import { IFRAME_SELECTOR } from '../config';
