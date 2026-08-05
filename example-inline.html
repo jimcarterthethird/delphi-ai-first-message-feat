@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Delphi First Message — Inline Example</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: Georgia, "Times New Roman", serif;
+        background: #f7f5f1;
+        color: #1a1a1a;
+        min-height: 100vh;
+        padding: 2rem 1.25rem 3rem;
+      }
+
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+        font-weight: 400;
+        letter-spacing: -0.02em;
+        margin-bottom: 0.4rem;
+      }
+
+      .hint {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.8rem;
+        color: #666;
+        margin-bottom: 1.5rem;
+        line-height: 1.5;
+      }
+
+      .hint code {
+        background: #ebe7df;
+        padding: 0.1em 0.35em;
+        border-radius: 3px;
+      }
+
+      #embed {
+        width: 100%;
+        min-height: 600px;
+        background: #fff;
+        border: 1px solid #ddd6c8;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Delphi First Message (inline)</h1>
+      <p class="hint">
+        Zero local dependencies — only change <code>YOUR_CHANNEL_ID</code>.
+        Serve over HTTP, then open with <code>?q=Hello</code>
+      </p>
+
+      <!-- 1. Delphi embed — set your channel ID -->
+      <div id="embed">
+        <script
+          src="https://www.delphi.ai/embed.js"
+          data-channel="YOUR_CHANNEL_ID"
+          data-mode="inline"
+          data-width="100%"
+          data-height="600"
+          async
+        ></script>
+      </div>
+    </main>
+
+    <!-- 2. First-message helper — inlined from dist/delphi-first-message.js -->
+    <script>
+"use strict";(()=>{var b="q",M="page",x="delphi-container",m=[`#${x} iframe`,'iframe[src*="delphi.ai"]',"iframe[data-delphi]"].join(", "),S=["textarea#message",'textarea[name="message"]',"input#message",'input[name="message"]','textarea[placeholder*="message" i]','textarea[placeholder*="type" i]','input[type="text"][placeholder*="question" i]','input[type="text"][placeholder*="ask" i]'].join(", "),d="q",f="landingPage",l=20,p=500,T=300,P=1500,L=15e3;function E(){try{let t=new URLSearchParams(window.location.search),e=t.get(b),n=t.get(M);return{firstMessage:e?decodeURIComponent(e).trim():null,startPage:n?n.toUpperCase().trim():null}}catch{return{firstMessage:null,startPage:null}}}var _="[DelphiFirstMessage]";function o(t){console.log(`${_} ${t}`)}function i(t){console.warn(`${_} ${t}`)}function g(t){let e=window.delphi;if(e?.page){e.page.overrides={...e.page.overrides,landingPage:t},o(`Set landing page via window.delphi.page.overrides: ${t}`);return}let n=()=>{let r=document.querySelector(m);if(!r?.src)return!1;try{let a=new URL(r.src);return a.searchParams.set("landingPage",t),r.src=a.toString(),o(`Set landing page via iframe src param: ${t}`),!0}catch{return i("Could not modify iframe src to set starting page"),!1}};if(!n()){let r=new MutationObserver(()=>{n()&&r.disconnect()});r.observe(document.documentElement,{childList:!0,subtree:!0}),o(`Watching for iframe to apply landing page: ${t}`)}}function h({firstMessage:t,startPage:e}){let n=document.querySelector(m);if(!n?.src)return!1;try{let r=new URL(n.src),a=!t||r.searchParams.get(d)===t,s=!e||r.searchParams.get(f)===e;return a&&s||(t&&r.searchParams.set(d,t),e&&r.searchParams.set(f,e),n.src=r.toString(),o(`Applied embed params via iframe src: ${r.search}`)),!0}catch{return i("Could not rewrite the embed iframe src."),!1}}function y(t){if(h(t))return;let e=new MutationObserver(()=>{h(t)&&e.disconnect()});e.observe(document.documentElement,{childList:!0,subtree:!0}),o("Watching for the embed iframe to apply params"),setTimeout(()=>{e.disconnect(),document.querySelector(m)||i("Embed iframe never appeared. Check that the Delphi embed script is on the page and that IFRAME_SELECTOR in src/config.ts matches it.")},L)}function R(t,e){let n=e.getComputedStyle(t);return n.display!=="none"&&n.visibility!=="hidden"&&n.opacity!=="0"}function A(t,e,n){let r=t.querySelector(S);if(!r)return o(`No element matched selector in iframe (readyState: ${t.readyState})`),!1;let a="";try{a=e.getComputedStyle(r).display}catch{o("getComputedStyle unavailable \u2014 proceeding anyway")}if(a==="none")return o("Input has display:none \u2014 still loading, retrying..."),!1;o(`Found chat input (<${r.tagName.toLowerCase()} id="${r.id}">) \u2014 filling message...`);let s=r.tagName.toLowerCase()==="textarea"?e.HTMLTextAreaElement.prototype:e.HTMLInputElement.prototype,u=Object.getOwnPropertyDescriptor(s,"value")?.set;return u?u.call(r,n):r.value=n,r.dispatchEvent(new e.Event("input",{bubbles:!0})),r.dispatchEvent(new e.Event("change",{bubbles:!0})),setTimeout(()=>v(r,e),T),!0}function v(t,e){let n=null,r=t.closest("form");if(r&&(n=r.querySelector('button[type="submit"]')),!n){let a=t.parentElement?.parentElement??t.parentElement;a&&(n=Array.from(a.querySelectorAll("button")).find(s=>s.offsetParent!==null&&s.querySelector("svg")!==null&&!s.disabled&&s.closest("header")===null)??null)}n?(o("Clicking submit \u2014 message sent!"),n.click()):(i("Submit button not found \u2014 simulating Enter key"),t.dispatchEvent(new e.KeyboardEvent("keydown",{bubbles:!0,cancelable:!0,key:"Enter",code:"Enter",keyCode:13})))}function c(t){let e=0,n=()=>{e++;let r=document.querySelector(m);if(!r){e<l?(o(`Waiting for Delphi iframe (${e}/${l})...`),setTimeout(n,p)):i("Delphi iframe not found after max attempts. Check CONTAINER_ID / IFRAME_SELECTOR in src/config.ts.");return}let a=null,s=null;try{a=r.contentDocument,s=r.contentWindow}catch{i("Cannot access iframe document (cross-origin restriction). Use the Delphi loader script \u2014 direct <iframe src> blocks document access.");return}if(!a||!s||a.readyState==="loading"){e<l?(o(`Iframe document not ready (${e}/${l})...`),setTimeout(n,p)):i("Iframe document never became ready.");return}A(a,s,t)||(e<l?(o(`Chat input not visible (${e}/${l}) \u2014 embed may not be on chat page`),setTimeout(n,p)):i(`Chat input not found after ${l} attempts. The embed may not be on the chat page. Try adding ?page=CHAT to the URL.`))};setTimeout(n,P)}function I(t,e){e&&g(e),t&&(document.readyState==="loading"?document.addEventListener("DOMContentLoaded",()=>c(t)):c(t))}function w(){let{firstMessage:t,startPage:e}=E();if(!t&&!e)return;if(o(`Initializing \u2014 fm: "${t}", page: "${e}"`),!!window.delphi?.page){I(t,e);return}y({firstMessage:t,startPage:e})}w();})();
+
+    </script>
+  </body>
+</html>

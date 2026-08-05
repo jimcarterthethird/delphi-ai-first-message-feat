@@ -99,9 +99,14 @@ https://yoursite.com/chat?q=What%20can%20you%20help%20me%20with%3F
 
 The embed loads with the question already asked and answered.
 
-### Ready-made example
+### Ready-made examples
 
-[`example.html`](example.html) at the repo root is the same install — open it, set `data-channel`, serve, add `?q=`.
+| File | Local `dist/` needed? | What to change |
+| ---- | --------------------- | -------------- |
+| [`example.html`](example.html) | Yes (`dist/delphi-first-message.js`) | `YOUR_CHANNEL_ID` |
+| [`example-inline.html`](example-inline.html) | **No** — helper is pasted inline | `YOUR_CHANNEL_ID` |
+
+Both: serve over HTTP, open with `?q=Hello`.
 
 ---
 
@@ -215,6 +220,7 @@ delphi-first-message/
 │   └── delphi-first-message.js    Compiled IIFE bundle — the only file you ship
 │
 ├── example.html                   Vanilla install — set YOUR_CHANNEL_ID and run
+├── example-inline.html            Same, with dist pasted inline (no local JS file)
 │
 ├── demo/
 │   ├── simple.html                Minimal test page, current embed
@@ -465,10 +471,11 @@ npx serve -l 8080 .
 | Page | Embed | URL |
 | ---- | ----- | --- |
 | Vanilla example | current `embed.js` | `http://localhost:8080/example.html?q=Hello` |
+| Inline example (no local JS) | current `embed.js` | `http://localhost:8080/example-inline.html?q=Hello` |
 | Minimal test | current `embed.js` | `http://localhost:8080/demo/simple?q=Hello` |
 | Interactive demo | legacy loader | `http://localhost:8080/demo/?q=Hello&page=CHAT` |
 
-Set `data-channel` in [`example.html`](example.html) before opening it. The interactive demo has a URL builder, example buttons, a config ID input persisted in `sessionStorage`, a live `[DelphiFirstMessage]` log panel, and a `file://` warning.
+Set `data-channel` in [`example.html`](example.html) or [`example-inline.html`](example-inline.html) before opening. The interactive demo has a URL builder, example buttons, a config ID input persisted in `sessionStorage`, a live `[DelphiFirstMessage]` log panel, and a `file://` warning.
 
 ---
 
