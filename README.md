@@ -18,7 +18,7 @@ Delphi has shipped two embed generations, and they need opposite techniques. Che
 | `www.delphi.ai/embed.js` | **Current** | Forwards `q` onto the embed's iframe URL. The embed sends the message itself. |
 | `embed.delphi.ai/loader.js` | Legacy | Types into the chat input inside the iframe document. |
 
-The script detects which one you have at runtime by checking for `window.delphi.page`, so you don't configure anything. If you're on the current embed, read [Quick start](#quick-start). If you're on the legacy loader, skip to [Legacy loader embed](#legacy-loader-embed).
+The script detects which one you have at runtime by checking for `window.delphi.page`, so you don't configure anything. If you're on the current embed, read [Quick start (vanilla HTML)](#quick-start-vanilla-html). If you're on the legacy loader, skip to [Legacy loader embed](#legacy-loader-embed).
 
 ### Why the two paths differ
 
@@ -35,36 +35,73 @@ Fortunately it's also unnecessary. The embed app reads the message from **its ow
 
 ---
 
-## Quick start
+## Quick start (vanilla HTML)
 
-### 1. Add the Delphi embed
+### 1. Get the dist file
+
+Copy `dist/delphi-first-message.js` next to your HTML page (or keep the repo layout and point at it with a relative path).
+
+```
+your-site/
+├── index.html
+└── delphi-first-message.js   ← copy of dist/delphi-first-message.js
+```
+
+### 2. Paste this into your page
+
+Replace `YOUR_CHANNEL_ID` with your Delphi channel UUID. That is the only value you need to change.
 
 ```html
-<div id="embed">
-    <script
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Delphi Chat</title>
+  </head>
+  <body>
+    <!-- Delphi embed -->
+    <div id="embed">
+      <script
         src="https://www.delphi.ai/embed.js"
         data-channel="YOUR_CHANNEL_ID"
         data-mode="inline"
         data-width="100%"
         data-height="600"
         async
-    ></script>
-</div>
+      ></script>
+    </div>
+
+    <!-- First-message helper — path must resolve to the dist file -->
+    <script src="delphi-first-message.js"></script>
+  </body>
+</html>
 ```
 
-### 2. Add this script
+If you keep this repo's folder layout instead of copying the file, use:
 
 ```html
 <script src="dist/delphi-first-message.js"></script>
 ```
 
-### 3. Navigate with a query param
+### 3. Serve over HTTP and open with `?q=`
+
+```bash
+npx serve -l 8080 .
+# → http://localhost:8080/example.html?q=Hello
+```
+
+Or on your own site:
 
 ```
 https://yoursite.com/chat?q=What%20can%20you%20help%20me%20with%3F
 ```
 
 The embed loads with the question already asked and answered.
+
+### Ready-made example
+
+[`example.html`](example.html) at the repo root is the same install — open it, set `data-channel`, serve, add `?q=`.
 
 ---
 
@@ -176,6 +213,8 @@ delphi-first-message/
 │
 ├── dist/
 │   └── delphi-first-message.js    Compiled IIFE bundle — the only file you ship
+│
+├── example.html                   Vanilla install — set YOUR_CHANNEL_ID and run
 │
 ├── demo/
 │   ├── simple.html                Minimal test page, current embed
@@ -425,10 +464,11 @@ npx serve -l 8080 .
 
 | Page | Embed | URL |
 | ---- | ----- | --- |
+| Vanilla example | current `embed.js` | `http://localhost:8080/example.html?q=Hello` |
 | Minimal test | current `embed.js` | `http://localhost:8080/demo/simple?q=Hello` |
 | Interactive demo | legacy loader | `http://localhost:8080/demo/?q=Hello&page=CHAT` |
 
-The interactive demo has a URL builder, example buttons, a config ID input persisted in `sessionStorage`, a live `[DelphiFirstMessage]` log panel, and a `file://` warning.
+Set `data-channel` in [`example.html`](example.html) before opening it. The interactive demo has a URL builder, example buttons, a config ID input persisted in `sessionStorage`, a live `[DelphiFirstMessage]` log panel, and a `file://` warning.
 
 ---
 
